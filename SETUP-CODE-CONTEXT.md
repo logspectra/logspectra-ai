@@ -63,6 +63,11 @@ curl -s -X POST http://localhost:8081/api/v1/services/code-registry \
 
 Then Analyze an ERROR with a stack in the UI.
 
+## Later: remediation PRs (GitHub App)
+
+After analysis, backend can open a PR in the **service** repo using a GitHub App (not MCP).
+See `logspectra-backend/SETUP-GITHUB-APP.md`. Requires `git-url` registered above.
+
 ## Later: git clone
 
 Implement clone inside `GitCloneCodeContextProvider` (JGit) into `~/.cache/logspectra/repos/<service>/<branch>`, then set `logspectra.ai.code-context.provider=git`.
