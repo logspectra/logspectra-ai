@@ -63,14 +63,29 @@ curl -s -X POST http://localhost:8081/api/v1/services/code-registry \
 
 Then Analyze an ERROR with a stack in the UI.
 
-## Later: remediation PRs (GitHub App)
+## GitHub Contents (no clone) — preferred when App is installed
 
-After analysis, backend can open a PR in the **service** repo using a GitHub App (not MCP).
-See `logspectra-backend/SETUP-GITHUB-APP.md`. Requires `git-url` registered above.
+When `github.app.enabled=true` in **logspectra-backend**, it registers a `RemoteSourceReader`.
+`logspectra-ai` then cascades: local disk if present, else GitHub Contents API (in-memory).
 
-## Later: git clone
+```yaml
+logspectra:
+  ai:
+    code-context:
+      provider: local   # cascades to github when RemoteSourceReader exists
+      # or: provider: github   # remote only
+```
 
-Implement clone inside `GitCloneCodeContextProvider` (JGit) into `~/.cache/logspectra/repos/<service>/<branch>`, then set `logspectra.ai.code-context.provider=git`.
+Requires only `git-url` (+ optional `default-branch`, `source-roots`) in the registry — **no local-path**.
+
+## Remediation PRs (GitHub App)
+
+After analysis with `createRemediationPr=true`, backend opens a branch + PR (source patches when the model returns `filePath`/`newContent`).
+See `logspectra-backend/SETUP-GITHUB-APP.md`.
+
+## Optional: git clone
+
+Still available via `provider: git` + `local-path` after a manual/JGit clone. Prefer Contents API for zero disk.
 
 ## Later: RAG
 

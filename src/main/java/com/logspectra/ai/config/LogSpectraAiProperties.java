@@ -19,7 +19,14 @@ public class LogSpectraAiProperties {
     @Data
     public static class CodeContext {
         private boolean enabled = true;
-        /** local | git (git currently falls back to local when local-path is set). */
+        /**
+         * local | git | github.
+         * <ul>
+         *   <li>local — filesystem; if host provides {@code RemoteSourceReader}, cascades to GitHub</li>
+         *   <li>git — local when local-path set; else cascade / stub</li>
+         *   <li>github — remote Contents API only (no disk)</li>
+         * </ul>
+         */
         private String provider = "local";
         private int maxSnippets = 8;
         private int contextLines = 20;
