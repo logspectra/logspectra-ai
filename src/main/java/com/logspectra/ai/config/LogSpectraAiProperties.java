@@ -30,6 +30,12 @@ public class LogSpectraAiProperties {
         private String provider = "local";
         private int maxSnippets = 8;
         private int contextLines = 20;
+        /**
+         * When a stack-matched file is at most this many characters, send the full file
+         * (Approach 2) so the model can emit search/replace patches. Larger files fall back
+         * to a ±contextLines window.
+         */
+        private int maxFileChars = 40_000;
         private Map<String, ServiceMapping> services = new LinkedHashMap<>();
     }
 

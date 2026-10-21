@@ -28,8 +28,9 @@ public class CodeAwarePromptEnricher {
         if (codeContext.getNotes() != null) {
             sb.append("Notes: ").append(codeContext.getNotes()).append('\n');
         }
-        sb.append("\nUse the following source snippets when inferring root cause and suggested fixes.\n");
-        sb.append("Cite file paths and line numbers in suggestedFixes when possible.\n\n");
+        sb.append("\nUse the following source (stack-trace matched) when inferring root cause and suggested fixes.\n");
+        sb.append("Prefer search/replace patches: set filePath + search (exact existing text) + replace.\n");
+        sb.append("Only use newContent for a full-file rewrite when a small search block is impossible.\n\n");
 
         for (CodeSnippet snippet : codeContext.getSnippets()) {
             sb.append("### ").append(snippet.getRelativePath())

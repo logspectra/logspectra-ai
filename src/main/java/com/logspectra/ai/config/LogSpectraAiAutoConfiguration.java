@@ -81,7 +81,8 @@ public class LogSpectraAiAutoConfiguration {
             locator,
             frameParser,
             ctx.getMaxSnippets(),
-            ctx.getContextLines()
+            ctx.getContextLines(),
+            ctx.getMaxFileChars()
         );
 
         RemoteSourceReader reader = remoteSourceReader.getIfAvailable();
@@ -90,7 +91,8 @@ public class LogSpectraAiAutoConfiguration {
             frameParser,
             reader,
             ctx.getMaxSnippets(),
-            ctx.getContextLines()
+            ctx.getContextLines(),
+            ctx.getMaxFileChars()
         );
 
         String provider = ctx.getProvider() == null ? "local" : ctx.getProvider().trim().toLowerCase();

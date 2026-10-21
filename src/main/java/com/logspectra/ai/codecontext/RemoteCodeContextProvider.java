@@ -23,17 +23,28 @@ public class RemoteCodeContextProvider implements CodeContextProvider {
     private final RemoteSourceReader remoteSourceReader;
     private final int maxSnippets;
     private final int contextLines;
+    private final int maxFileChars;
 
     public RemoteCodeContextProvider(ServiceSourceLocator locator,
                                      StackTraceFrameParser frameParser,
                                      RemoteSourceReader remoteSourceReader,
                                      int maxSnippets,
                                      int contextLines) {
+        this(locator, frameParser, remoteSourceReader, maxSnippets, contextLines, 40_000);
+    }
+
+    public RemoteCodeContextProvider(ServiceSourceLocator locator,
+                                     StackTraceFrameParser frameParser,
+                                     RemoteSourceReader remoteSourceReader,
+                                     int maxSnippets,
+                                     int contextLines,
+                                     int maxFileChars) {
         this.locator = locator;
         this.frameParser = frameParser;
         this.remoteSourceReader = remoteSourceReader;
         this.maxSnippets = Math.max(1, maxSnippets);
         this.contextLines = Math.max(5, contextLines);
+        this.maxFileChars = Math.max(0, maxFileChars);
     }
 
     @Override
@@ -111,35 +122,11 @@ public class RemoteCodeContextProvider implements CodeContextProvider {
             if (content.isEmpty()) {
                 continue;
             }
-            return Optional.of(toSnippet(relativePath, content.get(), frame));
+            return Optional.of(SourceSnippetBuilder.build(
+                relativePath, relativePath, content.get(), frame, contextLines, maxFileChars));
         }
         log.debug("No remote file for frame {}.{} under {}", frame.getClassName(), frame.getMethodName(),
             mapping.getGitUrl());
         return Optional.empty();
-    }
-
-    private CodeSnippet toSnippet(String relativePath, String fileContent, StackFrame frame) {
-        String[] lines = fileContent.split("\\R", -1);
-        int focus = frame.getLineNumber() > 0 ? frame.getLineNumber() : 1;
-        focus = Math.min(Math.max(focus, 1), Math.max(1, lines.length));
-        int start = Math.max(1, focus - contextLines);
-        int end = Math.min(lines.length, focus + contextLines);
-
-        StringBuilder content = new StringBuilder();
-        for (int i = start; i <= end; i++) {
-            content.append(String.format("%4d | %s%n", i, lines[i - 1]));
-        }
-
-        String language = relativePath.endsWith(".kt") ? "kotlin" : "java";
-        return CodeSnippet.builder()
-            .relativePath(relativePath)
-            .absolutePath(relativePath)
-            .startLine(start)
-            .endLine(end)
-            .focusLine(focus)
-            .language(language)
-            .content(content.toString())
-            .reason("stack:" + frame.getClassName() + "." + frame.getMethodName())
-            .build();
     }
 }

@@ -28,15 +28,25 @@ public class LocalFilesystemCodeContextProvider implements CodeContextProvider {
     private final StackTraceFrameParser frameParser;
     private final int maxSnippets;
     private final int contextLines;
+    private final int maxFileChars;
 
     public LocalFilesystemCodeContextProvider(ServiceSourceLocator locator,
                                               StackTraceFrameParser frameParser,
                                               int maxSnippets,
                                               int contextLines) {
+        this(locator, frameParser, maxSnippets, contextLines, 40_000);
+    }
+
+    public LocalFilesystemCodeContextProvider(ServiceSourceLocator locator,
+                                              StackTraceFrameParser frameParser,
+                                              int maxSnippets,
+                                              int contextLines,
+                                              int maxFileChars) {
         this.locator = locator;
         this.frameParser = frameParser;
         this.maxSnippets = Math.max(1, maxSnippets);
         this.contextLines = Math.max(5, contextLines);
+        this.maxFileChars = Math.max(0, maxFileChars);
     }
 
     @Override
@@ -147,41 +157,22 @@ public class LocalFilesystemCodeContextProvider implements CodeContextProvider {
 
     private Optional<CodeSnippet> readSnippet(Path file, Path root, StackFrame frame) {
         try {
-            List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-            if (lines.isEmpty()) {
+            String raw = Files.readString(file, StandardCharsets.UTF_8);
+            if (raw.isEmpty()) {
                 return Optional.empty();
             }
-            int focus = frame.getLineNumber() > 0 ? frame.getLineNumber() : 1;
-            focus = Math.min(Math.max(focus, 1), lines.size());
-            int start = Math.max(1, focus - contextLines);
-            int end = Math.min(lines.size(), focus + contextLines);
-
-            StringBuilder content = new StringBuilder();
-            for (int i = start; i <= end; i++) {
-                content.append(String.format("%4d | %s%n", i, lines.get(i - 1)));
-            }
-
             String relative = root.relativize(file).toString().replace('\\', '/');
-            String language = endsWith(file, ".kt") ? "kotlin" : "java";
-
-            return Optional.of(CodeSnippet.builder()
-                .relativePath(relative)
-                .absolutePath(file.toAbsolutePath().toString())
-                .startLine(start)
-                .endLine(end)
-                .focusLine(focus)
-                .language(language)
-                .content(content.toString())
-                .reason("stack:" + frame.getClassName() + "." + frame.getMethodName())
-                .build());
+            return Optional.of(SourceSnippetBuilder.build(
+                relative,
+                file.toAbsolutePath().toString(),
+                raw,
+                frame,
+                contextLines,
+                maxFileChars));
         } catch (IOException ex) {
             log.debug("Failed reading {}: {}", file, ex.getMessage());
             return Optional.empty();
         }
-    }
-
-    private static boolean endsWith(Path file, String suffix) {
-        return file.getFileName().toString().endsWith(suffix);
     }
 
     private static String simpleName(String fqcn) {
